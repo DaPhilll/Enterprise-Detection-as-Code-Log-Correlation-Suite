@@ -1,3 +1,5 @@
+[![Darreon Phillips Homepage](https://img.shields.io/badge/Darreon%20Phillips-Homepage-blue?style=for-the-badge&logo=github&logoColor=white)](https://github.com/DaPhilll)
+
 # Enterprise Detection-as-Code & Log Correlation Suite
 
 ## 1. Executive Summary & Objective
@@ -129,4 +131,7 @@ Executing the tuning rules against 30 days of production data demonstrated a sig
 * **Future Roadmap:**
   * [ ] Integrate open-source Sigma rule formats into the pipeline to allow automated conversion of logic into Splunk, CrowdStrike, and elastic syntax blocks.
   * [ ] Construct automated testing integrations using threat emulation tooling (e.g., Atomic Red Team) to dynamically trigger and validate the detection engineering loop within automated staging scopes.
+ 
+<br><br><br>
+[![Darreon Phillips Homepage](https://img.shields.io/badge/Darreon%20Phillips-Homepage-blue?style=for-the-badge&logo=github&logoColor=white)](https://github.com/DaPhilll)
 ```
