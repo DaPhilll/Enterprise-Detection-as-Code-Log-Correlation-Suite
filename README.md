@@ -30,7 +30,7 @@ README.md
   * Threat hunting queries that surface low-and-slow activity below standard alerting thresholds.
 
 ## 2. Architecture & Environment Topology
-The queries were developed and validated against the shared lab environment (VirtualBox, `10.10.0.0/24`) used across the related SIEM, SOAR, IDS, and vulnerability management projects. Telemetry originates from the Windows endpoint `WKSTN-01` and domain controller `SRV-DC01`.
+The queries were developed and validated against the shared lab environment (VMware Workstation Pro, `10.10.0.0/24`) used across the related SIEM, SOAR, IDS, and vulnerability management projects. Telemetry originates from the Windows endpoint `WKSTN-01` and domain controller `SRV-DC01`.
 
 * **SIEM (Cloud Platform):** Microsoft Sentinel — Log Analytics Workspace using Entra ID identity data, Microsoft 365 Defender components, and Azure Activity logging.
 * **SIEM (Enterprise Platform):** Rapid7 InsightIDR — Insight Agents, collection engines, and cloud-to-cloud connectors.
