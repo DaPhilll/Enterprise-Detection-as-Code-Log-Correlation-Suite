@@ -1,0 +1,7 @@
+# Detect NTDS.dit extraction via ntdsutil or vssadmin shadow copy creation
+#
+# Tactic: Credential Access (TA0006)
+# Technique: T1003.003 - OS Credential Dumping: NTDS
+# Data source: Rapid7 InsightIDR
+
+where(process.name="ntdsutil.exe" AND process.cmd_line=/"ac i ntds"/ AND process.cmd_line=/"ifm"/) OR where(process.cmd_line=/"vssadmin create shadow"/)

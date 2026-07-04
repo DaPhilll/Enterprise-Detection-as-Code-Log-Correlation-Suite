@@ -1,0 +1,7 @@
+# Detect certutil.exe used as an ingress tool transfer utility
+#
+# Tactic: Command and Control (TA0011)
+# Technique: T1105 - Ingress Tool Transfer
+# Data source: Rapid7 InsightIDR
+
+where(process.name="certutil.exe" AND process.cmd_line=/"-urlcache"/ AND process.cmd_line=/"-split"/)

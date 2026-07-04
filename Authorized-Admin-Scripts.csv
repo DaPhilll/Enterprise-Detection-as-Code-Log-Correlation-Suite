@@ -1,0 +1,3 @@
+ScriptName,Owner,DateAdded,Description
+patch-compliance-check.ps1,IT Operations,2025-03-01,"Scheduled task - validates patch status against baseline, invoked via PowerShell with execution policy bypass"
+agent-health-report.ps1,Security Operations,2025-03-05,"Wazuh/EDR agent heartbeat and health check script run from SRV-SOC01"

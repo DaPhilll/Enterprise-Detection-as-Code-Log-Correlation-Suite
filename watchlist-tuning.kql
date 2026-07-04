@@ -1,0 +1,17 @@
+// False-positive tuning for suspicious PowerShell execution using watchlist exclusions
+//
+// Depends on two watchlists (see /watchlists):
+//   - Approved-Vulnerability-Scanners.csv
+//   - Authorized-Admin-Scripts.csv
+//
+// Tactic: Execution (TA0002)
+// Technique: T1059.001 - PowerShell
+// Data source: Microsoft Sentinel (DeviceProcessEvents)
+
+let ApprovedScanners = _GetWatchlist('Approved-Vulnerability-Scanners') | project IPAddress;
+let ApprovedScripts = _GetWatchlist('Authorized-Admin-Scripts') | project ScriptName;
+DeviceProcessEvents
+| where ProcessCommandLine has_any ("-ExecutionPolicy bypass", "-ep bypass")
+| where ProcessCommandLine has_any ("Invoke-WebRequest", "iwr")
+| where not(RemoteIP in (ApprovedScanners))
+| where not(ProcessCommandLine has_any (ApprovedScripts))

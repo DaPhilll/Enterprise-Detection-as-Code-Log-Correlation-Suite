@@ -143,4 +143,4 @@ Applying the watchlist exclusion pattern in Use Case 2 against the lab baseline 
 MIT — see [LICENSE](./LICENSE).
 
 <br><br><br>
-[![Darreon Phillips Homepage](https://img.shields.io/badge/Darreon%20Phillips-Homepage-blue?style=for-the-badge&logo=github&logoColor=white)](https://github.com/DaPhilll)[Uploading LICENSE…]()
+[![Darreon Phillips Homepage](https://img.shields.io/badge/Darreon%20Phillips-Homepage-blue?style=for-the-badge&logo=github&logoColor=white)](https://github.com/DaPhilll)

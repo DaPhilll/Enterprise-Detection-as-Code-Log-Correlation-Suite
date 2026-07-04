@@ -1,0 +1,11 @@
+// Hunting query: anomalous Conditional Access policy block failures
+//
+// Tactic: Credential Access (TA0006) / Initial Access (TA0001)
+// Technique: T1110 - Brute Force (supporting signal)
+// Data source: Microsoft Sentinel (SigninLogs)
+
+SigninLogs
+| where ResultType == "53003" // Conditional Access Policy Block
+| summarize FailedCount = count() by UserPrincipalName, IPAddress, Location, AppDisplayName
+| where FailedCount > 5
+| sort by FailedCount desc

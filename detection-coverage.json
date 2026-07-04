@@ -1,0 +1,63 @@
+{
+  "name": "Detection-as-Code Log Correlation Suite - Coverage",
+  "versions": {
+    "attack": "19",
+    "navigator": "5.3.2",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Technique coverage for the Sentinel KQL and Rapid7 LEQL queries in this repository.",
+  "filters": {
+    "platforms": ["Windows"]
+  },
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showName": true,
+    "showID": true,
+    "showAggregateScores": false,
+    "countUnscored": false,
+    "aggregateFunction": "average",
+    "expandedSubtechniques": "annotated"
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1059.001",
+      "tactic": "execution",
+      "color": "#66b3ff",
+      "comment": "sentinel-kql/suspicious-powershell-execution.kql, sentinel-kql/watchlist-tuning.kql",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1105",
+      "tactic": "command-and-control",
+      "color": "#66b3ff",
+      "comment": "rapid7-leql/certutil-network-connections.leql",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1003.003",
+      "tactic": "credential-access",
+      "color": "#66b3ff",
+      "comment": "rapid7-leql/ntds-extraction.leql",
+      "enabled": true,
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": ["#ffffff", "#66b3ff"],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Query exists in this repo",
+      "color": "#66b3ff"
+    }
+  ],
+  "metadata": [],
+  "links": []
+}

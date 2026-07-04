@@ -1,0 +1,13 @@
+// Detect PowerShell execution policy bypass followed by a remote download
+//
+// Tactic: Execution (TA0002)
+// Technique: T1059.001 - PowerShell
+// Data source: Microsoft Sentinel (DeviceProcessEvents)
+
+let BypassedExecution = DeviceProcessEvents
+| where ProcessCommandLine has_any ("-ExecutionPolicy bypass", "-ep bypass")
+| where ProcessCommandLine has_any ("Invoke-WebRequest", "iwr", "Net.WebClient", "DownloadFile");
+BypassedExecution
+| extend AccountName = iff(isnotempty(InitiatingProcessAccountName), InitiatingProcessAccountName, AccountName)
+| project TimeGenerated, DeviceName, AccountName, InitiatingProcessFileName, InitiatingProcessCommandLine, FileName, ProcessCommandLine
+| sort by TimeGenerated desc
