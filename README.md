@@ -2,6 +2,24 @@
 
 # Enterprise Detection-as-Code & Log Correlation Suite
 
+## Repository Structure
+```
+/sentinel-kql
+  suspicious-powershell-execution.kql
+  watchlist-tuning.kql
+  hunting-conditional-access-anomaly.kql
+/rapid7-leql
+  certutil-network-connections.leql
+  ntds-extraction.leql
+/watchlists
+  Approved-Vulnerability-Scanners.csv
+  Authorized-Admin-Scripts.csv
+/mitre-navigator
+  detection-coverage.json
+LICENSE
+README.md
+```
+
 ## 1. Executive Summary & Objective
 * **Problem Statement:** Interface-driven rule creation inside individual SIEM platforms causes configuration drift, weak change tracking, high false-positive rates, and inconsistent coverage against modern adversary techniques.
 * **Solution Overview:** This project applies Detection-as-Code (DaC) principles to a set of detection and hunting queries: version-controlled logic, structured change tracking, and reproducible deployment through platform-native SIEM APIs. Queries target Microsoft Sentinel and Rapid7 InsightIDR.
@@ -38,13 +56,17 @@ The queries were developed and validated against the shared lab environment (Vir
 | **Command and Control** | T1105 | Ingress Tool Transfer | Standard Windows utility switches (`certutil.exe -urlcache`) used to drop external payloads. |
 | **Credential Access** | T1003.003 | NTDS | Volume shadow copy creation or native utilities (`ntdsutil.exe`) interacting with the identity database. |
 
+A pre-built ATT&CK Navigator layer for this coverage is available at `mitre-navigator/detection-coverage.json` — import it directly at [mitre-attack.github.io/attack-navigator](https://mitre-attack.github.io/attack-navigator/).
+
 ## 6. Telemetry & Suppression Logic
 * **Telemetry Correlated:** Cloud sign-in activity, administrative process monitoring, and host audit logs.
-* **Suppression Datasets:** Reference watchlists (`Approved-Vulnerability-Scanners`, `Authorized-Admin-Scripts`) containing known asset identifiers and approved script paths, checked against telemetry at query time.
+* **Suppression Datasets:** Reference watchlists (`watchlists/Approved-Vulnerability-Scanners.csv`, `watchlists/Authorized-Admin-Scripts.csv`) containing known asset identifiers and approved script paths, checked against telemetry at query time.
 
 ## 7. Implementation & Query Logic
+Each query below is also available as a standalone file in `/sentinel-kql` or `/rapid7-leql`.
 
 ### Use Case 1: Suspicious PowerShell Payload Execution (KQL)
+`sentinel-kql/suspicious-powershell-execution.kql`
 ```kusto
 // Detect PowerShell execution policy bypass followed by a remote download
 let BypassedExecution = DeviceProcessEvents
@@ -57,6 +79,7 @@ BypassedExecution
 ```
 
 ### Use Case 2: False-Positive Tuning via Watchlists (KQL)
+`sentinel-kql/watchlist-tuning.kql` — depends on the two watchlist CSVs in `/watchlists`.
 ```kusto
 let ApprovedScanners = _GetWatchlist('Approved-Vulnerability-Scanners') | project IPAddress;
 let ApprovedScripts = _GetWatchlist('Authorized-Admin-Scripts') | project ScriptName;
@@ -68,16 +91,19 @@ DeviceProcessEvents
 ```
 
 ### Use Case 3: Certutil Network Connections (LEQL)
+`rapid7-leql/certutil-network-connections.leql`
 ```text
 where(process.name="certutil.exe" AND process.cmd_line=/"-urlcache"/ AND process.cmd_line=/"-split"/)
 ```
 
 ### Use Case 4: NTDS.dit Extraction (LEQL)
+`rapid7-leql/ntds-extraction.leql`
 ```text
 where(process.name="ntdsutil.exe" AND process.cmd_line=/"ac i ntds"/ AND process.cmd_line=/"ifm"/) OR where(process.cmd_line=/"vssadmin create shadow"/)
 ```
 
 ### Hunting Query: Anomalous Conditional Access Failures (KQL)
+`sentinel-kql/hunting-conditional-access-anomaly.kql`
 ```kusto
 SigninLogs
 | where ResultType == "53003" // Conditional Access Policy Block
@@ -113,5 +139,8 @@ Applying the watchlist exclusion pattern in Use Case 2 against the lab baseline 
   * [ ] Convert queries to Sigma format for translation into Splunk, CrowdStrike, and Elastic syntax.
   * [ ] Add automated testing with threat emulation tooling (Atomic Red Team) to validate detection logic in a staging environment.
 
+## License
+MIT — see [LICENSE](./LICENSE).
+
 <br><br><br>
-[![Darreon Phillips Homepage](https://img.shields.io/badge/Darreon%20Phillips-Homepage-blue?style=for-the-badge&logo=github&logoColor=white)](https://github.com/DaPhilll)
+[![Darreon Phillips Homepage](https://img.shields.io/badge/Darreon%20Phillips-Homepage-blue?style=for-the-badge&logo=github&logoColor=white)](https://github.com/DaPhilll)[Uploading LICENSE…]()
