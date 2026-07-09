@@ -41,10 +41,10 @@ The queries were developed and validated against the shared lab environment (VMw
 * **Design Considerations:** Managing detections as code addresses the core limits of GUI rule creation: no change history, inconsistent syntax, and rules that don't reproduce cleanly across distinct environments.
 * **Technical Challenges & Resolution:**
   * **Challenge:** Variable administrative behavior across environments causes false positives when rigid out-of-the-box rules are applied uniformly.
-  * **Resolution:** Localized lookup containers (Sentinel Watchlists) abstract environment-specific variance out of the core query. The base detection runs globally and calls the watchlists at query time to exclude trusted entities, rather than maintaining separate rule copies.
+  * **Resolution:** Sentinel Watchlists hold the environment-specific exclusions (approved scanner IPs, authorized script names) outside the query itself. The base detection runs unchanged everywhere and checks the watchlists at query time, rather than maintaining separate rule copies per environment.
 
 ## 4. Cyber Kill Chain & Threat Lifecycle Mapping
-* **Weaponization & Delivery:** Dual-use tool activity and living-off-the-land execution via remote code download.
+* **Weaponization & Delivery:** Living-off-the-land execution, where built-in Windows utilities are misused to download and stage remote code.
 * **Installation:** Downloaders, persistence binaries, and processes executing from unprivileged temp directories.
 * **Actions on Objectives:** Data access anomalies, volume shadow copy manipulation, and directory database extraction against identity infrastructure.
 
