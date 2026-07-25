@@ -34,7 +34,7 @@ The queries were developed and validated against the shared lab environment (VMw
 
 * **SIEM (Cloud Platform):** Microsoft Sentinel — Log Analytics Workspace using Entra ID identity data, Microsoft 365 Defender components, and Azure Activity logging.
 * **SIEM (Enterprise Platform):** Rapid7 InsightIDR — Insight Agents, collection engines, and cloud-to-cloud connectors.
-* **Telemetry Sources:** Endpoint process events (`DeviceProcessEvents`), Active Directory operations, network proxy traffic, and cloud authentication logs (`SigninLogs`).
+* **Telemetry Sources:** Endpoint process events (`DeviceProcessEvents`), endpoint network events (`DeviceNetworkEvents`), Active Directory operations, and cloud authentication logs (`SigninLogs`).
 * **Deployment Model:** Query logic maintained under version control and pushed to platform-native APIs, enabling change history and peer review.
 
 ## 3. Engineering Thought Process & Methodology
@@ -80,26 +80,35 @@ BypassedExecution
 
 ### Use Case 2: False-Positive Tuning via Watchlists (KQL)
 `sentinel-kql/watchlist-tuning.kql` — depends on the two watchlist CSVs in `/watchlists`.
+
+`DeviceProcessEvents` has no `RemoteIP` column; that field lives in `DeviceNetworkEvents`. The scanner exclusion is therefore built as a separate lookup and joined back on `DeviceId`.
 ```kusto
 let ApprovedScanners = _GetWatchlist('Approved-Vulnerability-Scanners') | project IPAddress;
-let ApprovedScripts = _GetWatchlist('Authorized-Admin-Scripts') | project ScriptName;
+let ApprovedScripts  = _GetWatchlist('Authorized-Admin-Scripts') | project ScriptName;
+// Devices that received an inbound connection from an approved scanner.
+let ScannedDevices =
+    DeviceNetworkEvents
+    | where RemoteIP in (ApprovedScanners)
+    | distinct DeviceId;
 DeviceProcessEvents
 | where ProcessCommandLine has_any ("-ExecutionPolicy bypass", "-ep bypass")
-| where ProcessCommandLine has_any ("Invoke-WebRequest", "iwr")
-| where not(RemoteIP in (ApprovedScanners))
+| where ProcessCommandLine has_any ("Invoke-WebRequest", "iwr", "Net.WebClient", "DownloadFile")
+| where DeviceId !in (ScannedDevices)
 | where not(ProcessCommandLine has_any (ApprovedScripts))
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated desc
 ```
 
 ### Use Case 3: Certutil Network Connections (LEQL)
 `rapid7-leql/certutil-network-connections.leql`
 ```text
-where(process.name="certutil.exe" AND process.cmd_line=/"-urlcache"/ AND process.cmd_line=/"-split"/)
+where(process.name = "certutil.exe" AND process.cmd_line ICONTAINS-ALL ["-urlcache", "-split"])
 ```
 
 ### Use Case 4: NTDS.dit Extraction (LEQL)
-`rapid7-leql/ntds-extraction.leql`
+`rapid7-leql/ntds-extraction.leql` — LEQL permits only one `where()` clause per query, so both conditions are combined inside a single clause. Parentheses are required because LEQL evaluates `AND` before `OR`.
 ```text
-where(process.name="ntdsutil.exe" AND process.cmd_line=/"ac i ntds"/ AND process.cmd_line=/"ifm"/) OR where(process.cmd_line=/"vssadmin create shadow"/)
+where((process.name = "ntdsutil.exe" AND process.cmd_line ICONTAINS-ALL ["ac i ntds", "ifm"]) OR process.cmd_line ICONTAINS "vssadmin create shadow")
 ```
 
 ### Hunting Query: Anomalous Conditional Access Failures (KQL)
