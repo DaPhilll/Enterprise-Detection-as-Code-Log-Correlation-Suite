@@ -1,17 +1,29 @@
-// False-positive tuning for suspicious PowerShell execution using watchlist exclusions
+// False-positive tuning for suspicious PowerShell execution using watchlist exclusions.
 //
 // Depends on two watchlists (see /watchlists):
 //   - Approved-Vulnerability-Scanners.csv
 //   - Authorized-Admin-Scripts.csv
 //
+// Note on table schemas: DeviceProcessEvents does not contain a RemoteIP column.
+// RemoteIP lives in DeviceNetworkEvents. The scanner exclusion is therefore built
+// as a separate lookup against DeviceNetworkEvents and joined back on DeviceId,
+// rather than filtering DeviceProcessEvents on a column it does not have.
+//
 // Tactic: Execution (TA0002)
 // Technique: T1059.001 - PowerShell
-// Data source: Microsoft Sentinel (DeviceProcessEvents)
+// Data source: Microsoft Sentinel (DeviceProcessEvents, DeviceNetworkEvents)
 
 let ApprovedScanners = _GetWatchlist('Approved-Vulnerability-Scanners') | project IPAddress;
-let ApprovedScripts = _GetWatchlist('Authorized-Admin-Scripts') | project ScriptName;
+let ApprovedScripts  = _GetWatchlist('Authorized-Admin-Scripts') | project ScriptName;
+// Devices that received an inbound connection from an approved scanner.
+let ScannedDevices =
+    DeviceNetworkEvents
+    | where RemoteIP in (ApprovedScanners)
+    | distinct DeviceId;
 DeviceProcessEvents
 | where ProcessCommandLine has_any ("-ExecutionPolicy bypass", "-ep bypass")
-| where ProcessCommandLine has_any ("Invoke-WebRequest", "iwr")
-| where not(RemoteIP in (ApprovedScanners))
+| where ProcessCommandLine has_any ("Invoke-WebRequest", "iwr", "Net.WebClient", "DownloadFile")
+| where DeviceId !in (ScannedDevices)
 | where not(ProcessCommandLine has_any (ApprovedScripts))
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated desc
