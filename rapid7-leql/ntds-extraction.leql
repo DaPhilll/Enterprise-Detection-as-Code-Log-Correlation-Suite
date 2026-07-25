@@ -3,5 +3,9 @@
 # Tactic: Credential Access (TA0006)
 # Technique: T1003.003 - OS Credential Dumping: NTDS
 # Data source: Rapid7 InsightIDR
+#
+# LEQL permits only one where() clause per query, so both conditions are
+# combined inside a single clause. The parentheses are required because LEQL
+# evaluates AND before OR.
 
-where(process.name="ntdsutil.exe" AND process.cmd_line=/"ac i ntds"/ AND process.cmd_line=/"ifm"/) OR where(process.cmd_line=/"vssadmin create shadow"/)
+where((process.name = "ntdsutil.exe" AND process.cmd_line ICONTAINS-ALL ["ac i ntds", "ifm"]) OR process.cmd_line ICONTAINS "vssadmin create shadow")
